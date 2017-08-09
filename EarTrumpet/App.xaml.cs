@@ -1,32 +1,21 @@
 ﻿using System.Threading;
 using System.Windows;
-using Castle.Windsor;
-using Castle.Windsor.Installer;
 
 namespace EarTrumpet
 {
     public partial class App
     {
         private Mutex _mutex;
-        private WindsorContainer _container;
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            if (CreateMutex())
+            if (!CreateMutex())
             {
-                InitializeWindsor();
-                _container.Resolve<MainWindow>();
-            }
-            else
-            {
+                _mutex = null;
                 Current.Shutdown();
             }
-        }
 
-        private void InitializeWindsor()
-        {
-            _container = new WindsorContainer();
-            _container.Install(FromAssembly.This());
+            new MainWindow();
         }
 
         private bool CreateMutex()

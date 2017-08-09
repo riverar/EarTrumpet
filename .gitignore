@@ -199,3 +199,4 @@ FakesAssemblies/
 
 # Nuget packages
 /packages
+project.lock.json

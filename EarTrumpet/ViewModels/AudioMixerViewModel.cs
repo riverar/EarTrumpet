@@ -65,10 +65,10 @@ namespace EarTrumpet.ViewModels
         private readonly AudioMixerViewModelCallbackProxy _proxy;
         private object _refreshLock = new object();
 
-        public AudioMixerViewModel(IAudioDeviceService audioDeviceService, IAudioSessionService audioSessionService, IAudioService audioDeviceAndSessionsService)
+        public AudioMixerViewModel()
         {
-            _audioService = audioSessionService;
-            _deviceService = audioDeviceService;
+            _audioService = new AudioSessionService();
+            _deviceService = new AudioDeviceService();
 
             Apps = new ObservableCollection<AppItemViewModel>();
             _proxy = new AudioMixerViewModelCallbackProxy(_audioService, _deviceService);
