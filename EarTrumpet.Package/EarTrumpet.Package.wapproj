@@ -52,13 +52,35 @@
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <AppxBundle>Auto</AppxBundle>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <AppxBundle>Auto</AppxBundle>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <AppxBundle>Auto</AppxBundle>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <AppxBundle>Auto</AppxBundle>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <AppxBundle>Auto</AppxBundle>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <AppxBundle>Auto</AppxBundle>
+  </PropertyGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\EarTrumpet\EarTrumpet.csproj" />
+    <ProjectReference Include="..\EarTrumpet\EarTrumpet.csproj">
+      <PublishProfile Condition="'$(Configuration)|$(Platform)'=='Release|x86'">Properties\PublishProfiles\x86.pubxml</PublishProfile>
+      <PublishProfile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Properties\PublishProfiles\x64.pubxml</PublishProfile>
+      <PublishProfile Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">Properties\PublishProfiles\Arm64.pubxml</PublishProfile>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="EarTrumpet.Package_StoreKey.pfx" />
