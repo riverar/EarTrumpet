@@ -38,20 +38,20 @@ jobs:
       max-parallel: 1
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Fetch all history for all tags and branches
         run: git fetch --prune --unshallow
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v0.9.15
+        uses: gittools/actions/gitversion/setup@v1.1.1
         with:
           versionSpec: "5.x"
           includePrerelease: false
 
       - name: Use GitVersion
         id: gitversion
-        uses: gittools/actions/gitversion/execute@v0.9.15
+        uses: gittools/actions/gitversion/execute@v1.1.1
 
       - name: Generate versioning metadata
         shell: pwsh
@@ -108,7 +108,7 @@ jobs:
           $storeAssociation.Save($storeAssociationPath)
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v1
+        uses: microsoft/setup-msbuild@v2
           
       - name: Build EarTrumpet msixupload package
         if: matrix.channel == 'Store'
@@ -117,7 +117,7 @@ jobs:
       
       - name: Upload msixupload artifact
         if: matrix.channel == 'Store' && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: msixupload
           path: .artifacts/msixupload
@@ -125,12 +125,15 @@ jobs:
       - name: Build EarTrumpet
         if: matrix.channel == 'Chocolatey'
         shell: cmd
-        run: msbuild EarTrumpet/EarTrumpet.csproj /p:Platform=x86 /p:Configuration=Release /p:Channel=${{ matrix.channel }} /p:OutputPath=..\.artifacts\loose\ -maxcpucount
+        run: |
+          msbuild /t:Publish /p:PublishProfile=Properties\PublishProfiles\x86.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x86 /p:Channel=${{ matrix.channel }} /p:OutputPath=..\.artifacts\loose\x86 -maxcpucount
+          msbuild /t:Publish /p:PublishProfile=Properties\PublishProfiles\x64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x64 /p:Channel=${{ matrix.channel }} /p:OutputPath=..\.artifacts\loose\x64 -maxcpucount
+          msbuild /t:Publish /p:PublishProfile=Properties\PublishProfiles\arm64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=ARM64 /p:Channel=${{ matrix.channel }} /p:OutputPath=..\.artifacts\loose\arm64 -maxcpucount
 
       - name: Upload loose artifacts
         if:
           matrix.channel == 'Chocolatey' && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: loose
           path: .artifacts/loose
@@ -161,7 +164,7 @@ jobs:
         if:
           matrix.channel == 'AppInstaller' && github.event_name !=
           'pull_request'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sideload
           path: .artifacts/sideload
@@ -189,7 +192,7 @@ jobs:
           
       - name: Upload chocolatey artifacts
         if: matrix.channel == 'Chocolatey' && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v1.0.0
+        uses: actions/upload-artifact@v4
         with:
           name: chocolatey
           path: .artifacts/chocolatey
@@ -209,7 +212,7 @@ jobs:
       AZURE_CLIENT_SECRET: ${{ secrets.azure_client_secret }}
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: .artifacts
 
@@ -372,7 +375,7 @@ jobs:
 
       - name: Upload chocolatey artifact
         if: matrix.channel == 'Chocolatey'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: chocolatey-package
           path: .artifacts/chocolatey/*.nupkg
