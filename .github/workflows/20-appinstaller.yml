@@ -1,0 +1,41 @@
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Base]
+    types:
+      - completed
+
+env:
+  channel: "AppInstaller"
+  publisher: "CN=File-New-Project, O=File-New-Project, L=Purcellville, S=Virginia, C=US"
+
+jobs:
+  appinstaller:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Restore base
+        uses: actions/cache/restore@v4
+        with:
+            path: .artifacts
+            key: base-${{ github.sha }}
+
+      - name: Set Bugsnag API Key
+        shell: pwsh
+        run: |
+          Get-ChildItem .artifacts\base\**\app.config | ForEach-Object {
+            $cfg = Get-Content $_
+            $cfg | ForEach-Object { $_.Replace("{bugsnag.apikey}", "${{ secrets.bugsnag_api_key }}") } | Set-Content $_
+          }
+
+      - name: Configure manifest
+        uses: ./.github/actions/package/manifest
+        with:
+          manifest: packaging/package.appxmanifest
+          publisher: ${{ env.publisher }}
+          branch: ${{ github.ref_name }}
+          prefix: "EarTrumpet"
+          version: .artifacts/version.txt
