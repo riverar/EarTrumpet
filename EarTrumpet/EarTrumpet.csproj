@@ -18,11 +18,12 @@
 		<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
 		<OutputPath>..\Build\$(Configuration)\$(Platform)\</OutputPath>
 		<DefineConstants>TRACE;$(Platform.ToUpper());$(Configuration.ToUpper())</DefineConstants>
-		<RuntimeIdentifier>win-$(Platform.ToLower())</RuntimeIdentifier>
+        <RuntimeIdentifier>win-$(Platform.ToLower())</RuntimeIdentifier>
 		<SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
 		<AnalysisLevel>latest</AnalysisLevel>
         <SelfContained>true</SelfContained>
         <UseRidGraph>true</UseRidGraph>
+        <PublishProfile>Properties\PublishProfiles\$(Platform).pubxml</PublishProfile>
 	</PropertyGroup>
 	<PropertyGroup Condition=" $(Configuration.EndsWith('Debug')) ">
 		<SelfContained>true</SelfContained>
