@@ -68,9 +68,9 @@ jobs:
       - name: Build EarTrumpet
         shell: cmd
         run: |
-          dotnet publish /p:PublishProfile=Properties\PublishProfiles\x86.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x86 /p:OutputPath=..\.artifacts\base\x86
-          rem dotnet publish /p:PublishProfile=Properties\PublishProfiles\x64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x64 /p:OutputPath=..\.artifacts\base\x64
-          rem dotnet publish /p:PublishProfile=Properties\PublishProfiles\arm64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=ARM64 /p:OutputPath=..\.artifacts\base\arm64
+          dotnet publish /p:PublishProfile=Properties\PublishProfiles\x86.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x86 /p:OutputPath=..\.artifacts\base\x86\
+          rem dotnet publish /p:PublishProfile=Properties\PublishProfiles\x64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x64 /p:OutputPath=..\.artifacts\base\x64\
+          rem dotnet publish /p:PublishProfile=Properties\PublishProfiles\arm64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=ARM64 /p:OutputPath=..\.artifacts\base\arm64\
 
       - name: Set Bugsnag API key
         shell: pwsh
@@ -91,6 +91,7 @@ jobs:
           certificate-profile-name: profileTWN
           files-folder: .artifacts
           files-folder-recurse: true
+          files-folder-depth: 1
           files-folder-filter: exe,dll
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
