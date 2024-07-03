@@ -89,7 +89,7 @@ jobs:
           endpoint: https://wus2.codesigning.azure.net/
           trusted-signing-account-name: main
           certificate-profile-name: profileTWN
-          files-folder: .artifacts
+          files-folder: .artifacts\base
           files-folder-recurse: true
           files-folder-depth: 1
           files-folder-filter: exe,dll
