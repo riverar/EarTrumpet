@@ -90,6 +90,7 @@ jobs:
           trusted-signing-account-name: main
           certificate-profile-name: profileTWN
           files-folder: .artifacts
+          files-folder-recurse: true
           files-folder-filter: exe,dll
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
