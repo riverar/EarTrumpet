@@ -67,10 +67,27 @@ jobs:
 
       - name: Build EarTrumpet
         shell: cmd
-        run: |
-          dotnet publish /p:PublishProfile=Properties\PublishProfiles\x86.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x86 /p:OutputPath=..\.artifacts\base\x86\
-          rem dotnet publish /p:PublishProfile=Properties\PublishProfiles\x64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=x64 /p:OutputPath=..\.artifacts\base\x64\
-          rem dotnet publish /p:PublishProfile=Properties\PublishProfiles\arm64.pubxml EarTrumpet/EarTrumpet.csproj /p:Platform=ARM64 /p:OutputPath=..\.artifacts\base\arm64\
+        run: >
+          dotnet publish
+          /p:PublishProfile=x86
+          /p:PublishProfileRootFolder=EarTrumpet\Properties\PublishProfiles
+          /p:Platform=x86
+          /p:PublishDir=..\.artifacts\base\x86\
+          EarTrumpet\EarTrumpet.csproj
+
+          dotnet publish
+          /p:PublishProfile=x64
+          /p:PublishProfileRootFolder=EarTrumpet\Properties\PublishProfiles
+          /p:Platform=x64
+          /p:PublishDir=..\.artifacts\base\x64\
+          EarTrumpet\EarTrumpet.csproj
+
+          dotnet publish
+          /p:PublishProfile=arm64
+          /p:PublishProfileRootFolder=EarTrumpet\Properties\PublishProfiles
+          /p:Platform=arm64
+          /p:PublishDir=..\.artifacts\base\arm64\
+          EarTrumpet\EarTrumpet.csproj
 
       - name: Set Bugsnag API key
         shell: pwsh
@@ -89,10 +106,7 @@ jobs:
           endpoint: https://wus2.codesigning.azure.net/
           trusted-signing-account-name: main
           certificate-profile-name: profileTWN
-          files-folder: .artifacts\base
-          files-folder-recurse: true
-          files-folder-depth: 1
-          files-folder-filter: exe,dll
+          files-catalog: packaging\catalog.txt
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
