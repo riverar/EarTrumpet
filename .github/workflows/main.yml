@@ -20,6 +20,16 @@ on:
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
+  GHA_HASH_PATHS: |
+    EarTrumpet/**
+    !EarTrumpet/**/bin/**
+    !EarTrumpet/**/obj/**
+    !EarTrumpet/**/.vs/**
+    EarTrumpet.Package/**
+    !EarTrumpet.Package/**/bin/**
+    !EarTrumpet.Package/**/obj/**
+    !EarTrumpet/**/.vs/**
+    Packaging/**
 
 jobs:
   #
@@ -31,16 +41,15 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Check for existing base
         uses: actions/cache/restore@v4
         id: base-exists
         with:
           path: .artifacts
-          key: base-${{ github.sha }}
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        if: steps.base-exists.outputs.cache-hit != 'true'
+          key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
 
       - name: Fetch all history for all tags and branches
         run: git fetch --prune --unshallow
@@ -130,9 +139,8 @@ jobs:
       - name: Add to cache
         uses: actions/cache/save@v4
         with:
-          key: base-${{ github.sha }}
-          path: |
-            .artifacts
+          key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
+          path: .artifacts
         if: steps.base-exists.outputs.cache-hit != 'true'
 
   #
