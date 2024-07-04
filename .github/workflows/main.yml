@@ -22,62 +22,47 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-
   #
-  # Check if base already built
-  #
-
-  cached-base:
-    name: 🔍 Check for Existing Build Base
-    runs-on: windows-latest
-    outputs:
-      exists: ${{ steps.restore.outputs.condition }}
-    steps:
-      - name: Check for existing base
-        uses: actions/cache/restore@v4
-        id: restore
-        with:
-          path: .artifacts
-          key: base-${{ github.sha }}
-
-  # 
   # Base build
   #
 
   base:
     name: 🔨 Build Base
     runs-on: windows-latest
-    needs: cached-base
-    if: needs.cached-base.outputs.exists
 
     steps:
       - name: Check for existing base
         uses: actions/cache/restore@v4
-        id: restore-base
+        id: base-exists
         with:
           path: .artifacts
           key: base-${{ github.sha }}
 
       - name: Checkout
         uses: actions/checkout@v4
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Fetch all history for all tags and branches
         run: git fetch --prune --unshallow
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@v1.1.1
         with:
           versionSpec: '5.x'
           includePrerelease: false
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Use GitVersion
         id: gitversion
         uses: gittools/actions/gitversion/execute@v1.1.1
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Create artifacts folder
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path .artifacts/
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Generate versioning artifact
         shell: pwsh
@@ -86,10 +71,12 @@ jobs:
             Out-File .artifacts/version_4.txt
           "${{ steps.gitversion.outputs.majorMinorPatch }}.0" |
             Out-File .artifacts/version_3.txt
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Restore packages
         run: dotnet restore EarTrumpet.sln
         shell: cmd
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Build EarTrumpet
         shell: cmd
@@ -114,6 +101,7 @@ jobs:
           /p:Platform=arm64
           /p:PublishDir=..\.artifacts\base\arm64\
           EarTrumpet\EarTrumpet.csproj
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Set Bugsnag API key
         shell: pwsh
@@ -122,6 +110,7 @@ jobs:
             $cfg = Get-Content $_
             $cfg | ForEach-Object { $_.Replace("{bugsnag.apikey}", "${{ secrets.bugsnag_api_key }}") } | Set-Content $_
           }
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Sign all files
         uses: azure/trusted-signing-action@v0.3.20
@@ -136,6 +125,7 @@ jobs:
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Add to cache
         uses: actions/cache/save@v4
@@ -143,10 +133,11 @@ jobs:
           key: base-${{ github.sha }}
           path: |
             .artifacts
+        if: steps.base-exists.outputs.cache-hit != 'true'
 
-  # 
+  #
   # Packaging: AppInstaller
-  # 
+  #
 
   appinstaller:
     name: 📦 Package for AppInstaller
@@ -175,7 +166,7 @@ jobs:
           branch: ${{ github.ref_name }}
           prefix: 'EarTrumpet'
           version: .artifacts/version_4.txt
-      
+
       - name: Create bundle
         shell: pwsh
         run: >
@@ -192,9 +183,9 @@ jobs:
 
       # TODO: Complete AppInstaller pipeline
 
-  # 
+  #
   # Packaging: Chocolatey
-  # 
+  #
 
   chocolatey:
     name: 📦 Package for Chocolatey
@@ -223,10 +214,10 @@ jobs:
           branch: ${{ github.ref_name }}
           prefix: 'EarTrumpet'
           version: .artifacts/version_4.txt
-      
+
       # TODO: Complete Chocolatey pipeline
 
-  # 
+  #
   # Packaging: Store
   #
 
@@ -257,10 +248,10 @@ jobs:
           branch: ${{ github.ref_name }}
           prefix: 'EarTrumpet'
           version: .artifacts/version_3.txt
-      
+
       # TODO: Complete Store pipeline
 
-  # 
+  #
   # Packaging: GitHub Releases
   #
 
@@ -291,5 +282,5 @@ jobs:
           branch: ${{ github.ref_name }}
           prefix: 'EarTrumpet'
           version: .artifacts/version_4.txt
-      
+
       # TODO: Complete GitHub Release pipeline
