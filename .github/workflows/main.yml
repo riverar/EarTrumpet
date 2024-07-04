@@ -23,6 +23,23 @@ env:
 
 jobs:
 
+  #
+  # Check if base already built
+  #
+
+  cached-base:
+    name: 🔍 Check for Existing Build Base
+    runs-on: windows-latest
+    outputs:
+      exists: ${{ steps.restore.outputs.condition }}
+    steps:
+      - name: Check for existing base
+        uses: actions/cache/restore@v4
+        id: restore
+        with:
+          path: .artifacts
+          key: base-${{ github.sha }}
+
   # 
   # Base build
   #
@@ -30,8 +47,17 @@ jobs:
   base:
     name: 🔨 Build Base
     runs-on: windows-latest
+    needs: cached-base
+    if: needs.cached-base.outputs.exists
 
     steps:
+      - name: Check for existing base
+        uses: actions/cache/restore@v4
+        id: restore-base
+        with:
+          path: .artifacts
+          key: base-${{ github.sha }}
+
       - name: Checkout
         uses: actions/checkout@v4
 

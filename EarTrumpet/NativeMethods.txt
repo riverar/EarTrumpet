@@ -44,7 +44,6 @@ GETPROPERTYSTOREFLAGS
 GetRawInputData
 GetSystemMetricsForDpi
 GetWindowLong
-GetWindowLongPtr
 GetWindowRect
 GetWindowThreadProcessId
 HICON
@@ -133,7 +132,6 @@ SendMessage
 SET_WINDOW_POS_FLAGS
 SetForegroundWindow
 SetWindowLong
-SetWindowLongPtr
 SetWindowPos
 SetWindowsHookEx
 SFGAO_FLAGS
