@@ -50,6 +50,7 @@ jobs:
         with:
           path: .artifacts
           key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
+          lookup-only: true
 
       - name: Fetch all history for all tags and branches
         run: git fetch --prune --unshallow
@@ -92,23 +93,17 @@ jobs:
         run: >
           dotnet publish
           /p:PublishProfile=x86
-          /p:PublishProfileRootFolder=EarTrumpet\Properties\PublishProfiles
           /p:Platform=x86
-          /p:PublishDir=..\.artifacts\base\x86\
           EarTrumpet\EarTrumpet.csproj
 
           dotnet publish
           /p:PublishProfile=x64
-          /p:PublishProfileRootFolder=EarTrumpet\Properties\PublishProfiles
           /p:Platform=x64
-          /p:PublishDir=..\.artifacts\base\x64\
           EarTrumpet\EarTrumpet.csproj
 
           dotnet publish
           /p:PublishProfile=arm64
-          /p:PublishProfileRootFolder=EarTrumpet\Properties\PublishProfiles
           /p:Platform=arm64
-          /p:PublishDir=..\.artifacts\base\arm64\
           EarTrumpet\EarTrumpet.csproj
         if: steps.base-exists.outputs.cache-hit != 'true'
 
@@ -164,30 +159,45 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .artifacts
-          key: base-${{ github.sha }}
+          key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
+          fail-on-cache-miss: true
 
       - name: Configure manifest
         uses: ./.github/actions/configure-manifest
         with:
-          manifest: packaging/package.appxmanifest
+          manifest: EarTrumpet.Package/Package.appxmanifest
           publisher: ${{ env.publisher }}
           branch: ${{ github.ref_name }}
           prefix: 'EarTrumpet'
           version: .artifacts/version_4.txt
 
-      - name: Create bundle
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Restore packages
         shell: pwsh
         run: >
-          msbuild EarTrumpet.Package/EarTrumpet.Package.wapproj
-            /p:Configuration=Release
-            /p:AppxBundle=Always
-            /p:Channel=AppInstaller
-            /p:AppxPackageDir=..\.artifacts\sideload\
-            /p:AppxPackageSigningEnabled=false
-            /p:UapAppxPackageBuildMode=SideloadOnly
-            /p:GenerateAppInstallerFile=true
-            /p:AppxPackageTestDir=..\.artifacts\sideload\
-            /p:AppInstallerUri="https://install.eartrumpet.app"
+          dotnet restore
+          EarTrumpet.sln
+
+      - name: Create msixbundle
+        shell: pwsh
+        run: >
+          msbuild
+          /p:AppxBundle=Always
+          /p:AppxPackageSigningEnabled=false
+          /p:AppxPackageDir=..\.artifacts\sideload\
+          /p:AppxPackageTestDir=..\.artifacts\sideload\
+          /p:AppInstallerUri="https://install.eartrumpet.app"
+          /p:Configuration=Release
+          /p:Channel=AppInstaller
+          /p:GenerateAppInstallerFile=true
+          /p:Platform=x86
+          /p:UapAppxPackageBuildMode=SideloadOnly
+          /p:WapAlwaysBuildDependentProjects=false
+          EarTrumpet.Package/EarTrumpet.Package.wapproj
 
       # TODO: Complete AppInstaller pipeline
 
@@ -212,16 +222,26 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .artifacts
-          key: base-${{ github.sha }}
+          key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
+          fail-on-cache-miss: true
 
-      - name: Configure manifest
-        uses: ./.github/actions/configure-manifest
+      - name: Adjust Nuspec
+        uses: ./.github/actions/configure-nuspec
         with:
-          manifest: packaging/package.appxmanifest
-          publisher: ${{ env.publisher }}
-          branch: ${{ github.ref_name }}
-          prefix: 'EarTrumpet'
+          nuspec: Packaging\Chocolatey\eartrumpet.nuspec
           version: .artifacts/version_4.txt
+
+      - name: Stage packaging
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path .artifacts/chocolatey/
+          Copy-Item Packaging\Chocolatey -Recurse .artifacts/chocolatey/
+          cat .artifacts/chocolatey/eartrumpet.nuspec
+
+      - name: Create chocolatey package
+        shell: pwsh
+        run: |
+          choco pack ".artifacts\chocolatey\eartrumpet.nuspec" --out ".artifacts\chocolatey"
 
       # TODO: Complete Chocolatey pipeline
 
@@ -246,7 +266,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .artifacts
-          key: base-${{ github.sha }}
+          key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
+          fail-on-cache-miss: true
 
       - name: Configure manifest
         uses: ./.github/actions/configure-manifest
@@ -280,7 +301,8 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .artifacts
-          key: base-${{ github.sha }}
+          key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
+          fail-on-cache-miss: true
 
       - name: Configure manifest
         uses: ./.github/actions/configure-manifest

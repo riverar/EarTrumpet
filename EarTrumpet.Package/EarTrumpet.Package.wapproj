@@ -76,7 +76,9 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
-      <ProjectReference Include="..\EarTrumpet\EarTrumpet.csproj" />
+      <ProjectReference Include="..\EarTrumpet\EarTrumpet.csproj">
+        <PublishProfile>Properties\PublishProfiles\$(Platform).pubxml</PublishProfile>
+      </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="EarTrumpet.Package_StoreKey.pfx" />
@@ -132,4 +134,11 @@
     <Content Include="Assets\Wide310x150Logo.scale-400.png" />
   </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
+
+  <!--
+    HACK: Do not attempt to re-build dependent projects.
+    This is a waste of time and will overwrite our signed outputs.
+  -->
+  <Target Name="_BuildDependentProjects" />
+
 </Project>
