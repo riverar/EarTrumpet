@@ -199,7 +199,13 @@ jobs:
           /p:WapAlwaysBuildDependentProjects=false
           EarTrumpet.Package/EarTrumpet.Package.wapproj
 
-      # TODO: Complete AppInstaller pipeline
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppInstaller
+          path: |
+            .artifacts/sideload/EarTrumpet.Package_*_x86_x64_arm64.msixbundle
+            .artifacts/sideload/EarTrumpet.Package.appinstaller
 
   #
   # Packaging: Chocolatey
@@ -209,7 +215,7 @@ jobs:
     name: 📦 Package for Chocolatey
     runs-on: windows-latest
     needs: base
-
+    
     env:
       channel: 'Chocolatey'
       publisher: 'CN=File-New-Project, O=File-New-Project, L=Purcellville, S=Virginia, C=US'
@@ -225,7 +231,7 @@ jobs:
           key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
           fail-on-cache-miss: true
 
-      - name: Adjust Nuspec
+      - name: Adjust nuspec
         uses: ./.github/actions/configure-nuspec
         with:
           nuspec: Packaging\Chocolatey\eartrumpet.nuspec
@@ -234,16 +240,19 @@ jobs:
       - name: Stage packaging
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path .artifacts/chocolatey/
-          Copy-Item Packaging\Chocolatey -Recurse .artifacts/chocolatey/
-          cat .artifacts/chocolatey/eartrumpet.nuspec
+          Copy-Item Packaging\Chocolatey -Recurse .artifacts
 
-      - name: Create chocolatey package
+      - name: Create package
         shell: pwsh
         run: |
           choco pack ".artifacts\chocolatey\eartrumpet.nuspec" --out ".artifacts\chocolatey"
 
-      # TODO: Complete Chocolatey pipeline
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Chocolatey
+          path: |
+            .artifacts/chocolatey/eartrumpet.*.nupkg
 
   #
   # Packaging: Store
@@ -272,45 +281,51 @@ jobs:
       - name: Configure manifest
         uses: ./.github/actions/configure-manifest
         with:
-          manifest: packaging/package.appxmanifest
+          manifest: EarTrumpet.Package/Package.appxmanifest
           publisher: ${{ env.publisher }}
           branch: ${{ github.ref_name }}
           prefix: 'EarTrumpet'
           version: .artifacts/version_3.txt
 
-      # TODO: Complete Store pipeline
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          msbuild-architecture: x64
+
+      - name: Restore packages
+        shell: pwsh
+        run: >
+          dotnet restore
+          EarTrumpet.sln
+
+      - name: Create msixbundle
+        shell: pwsh
+        run: >
+          msbuild
+          /p:AppxBundle=Always
+          /p:AppxPackageSigningEnabled=false
+          /p:AppxPackageDir=..\.artifacts\store\
+          /p:Configuration=Release
+          /p:Channel=Store
+          /p:GenerateAppInstallerFile=false
+          /p:Platform=x86
+          /p:UapAppxPackageBuildMode=CI
+          /p:WapAlwaysBuildDependentProjects=false
+          EarTrumpet.Package/EarTrumpet.Package.wapproj
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MicrosoftStore
+          path: |
+            .artifacts/store/EarTrumpet.Package_*_x86_x64_arm64_bundle.msixupload
 
   #
-  # Packaging: GitHub Releases
+  # Deployment: AppInstaller
   #
 
-  github:
-    name: 📦 Package for GitHub Release
-    runs-on: windows-latest
-    needs: base
-
-    env:
-      channel: 'GitHub'
-      publisher: 'CN=File-New-Project, O=File-New-Project, L=Purcellville, S=Virginia, C=US'
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Restore base
-        uses: actions/cache/restore@v4
-        with:
-          path: .artifacts
-          key: base-${{ hashFiles(env.GHA_HASH_PATHS) }}
-          fail-on-cache-miss: true
-
-      - name: Configure manifest
-        uses: ./.github/actions/configure-manifest
-        with:
-          manifest: packaging/package.appxmanifest
-          publisher: ${{ env.publisher }}
-          branch: ${{ github.ref_name }}
-          prefix: 'EarTrumpet'
-          version: .artifacts/version_4.txt
-
-      # TODO: Complete GitHub Release pipeline
+  # deploy-appinstaller:
+  #   name: 🚀 Deploy AppInstaller package
+  #   runs-on: windows-latest
+  #   needs: appinstaller
+  #   if: github.event_name == 'pull_request'
