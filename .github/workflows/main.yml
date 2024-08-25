@@ -57,7 +57,7 @@ jobs:
         if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Install GitVersion
-        uses: gittools/actions/gitversion/setup@v1.1.1
+        uses: gittools/actions/gitversion/setup@v1.2.0
         with:
           versionSpec: '5.x'
           includePrerelease: false
@@ -65,7 +65,7 @@ jobs:
 
       - name: Use GitVersion
         id: gitversion
-        uses: gittools/actions/gitversion/execute@v1.1.1
+        uses: gittools/actions/gitversion/execute@v1.2.0
         if: steps.base-exists.outputs.cache-hit != 'true'
 
       - name: Create artifacts folder
@@ -197,6 +197,7 @@ jobs:
           /p:Platform=x86
           /p:UapAppxPackageBuildMode=SideloadOnly
           /p:WapAlwaysBuildDependentProjects=false
+          "/p:AppxBundlePlatforms=x86|x64|arm64"
           EarTrumpet.Package/EarTrumpet.Package.wapproj
 
       - name: Upload artifact
@@ -324,8 +325,45 @@ jobs:
   # Deployment: AppInstaller
   #
 
-  # deploy-appinstaller:
-  #   name: 🚀 Deploy AppInstaller package
-  #   runs-on: windows-latest
-  #   needs: appinstaller
-  #   if: github.event_name == 'pull_request'
+  deploy-appinstaller:
+    name: 🚀 Deploy AppInstaller package
+    runs-on: windows-latest
+    needs: appinstaller
+    # if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: AppInstaller
+          path: .
+          #.artifacts/sideload/EarTrumpet.Package_*_x86_x64_arm64.msixbundle
+          #.artifacts/sideload/EarTrumpet.Package.appinstaller
+      
+      - name: Log into Azure
+        uses: azure/login@v2
+        with:
+          creds: '{"clientId":"${{ secrets.azure_storage_client_id }}","clientSecret":"${{ secrets.azure_storage_client_secret }}","subscriptionId":"${{ secrets.azure_storage_subscription_id }}","tenantId":"${{ secrets.azure_tenant_id }}"}'
+          enable-AzPSSession: true 
+
+      - name: Upload blob to Azure Storage
+        uses: azure/powershell@v2
+        with:
+          azPSVersion: "latest"
+          inlineScript: >
+            $context =
+            New-AzStorageContext
+            -StorageAccountName eartrumpetstorage
+            -UseConnectedAccount
+
+            Get-ChildItem
+            -File EarTrumpet.Package_*_x86_x64_arm64.msixbundle |
+            Set-AzStorageBlobContent
+            -Container builds
+            -Context $context
+
+            Set-AzStorageBlobContent
+            -File EarTrumpet.Package.appinstaller
+            -Container builds
+            -Context $context
+            -Force
